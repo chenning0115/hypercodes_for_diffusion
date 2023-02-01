@@ -1,0 +1,21 @@
+{
+    "data":{
+        "data_sign":"PaviaU",
+        "patch_size":13,
+        "test_ratio":0.93,
+        "batch_size":64,
+        "num_classes":9,
+        "pca":103,
+        "spectral_size":103,
+        "none_zero_num":42776
+    },
+    "net": {
+        "net_type": "cross_trans",
+        "depth":5,
+        "dim":64
+    },
+    "train": {
+        "epochs": 100,
+        "lr":0.001
+    }
+}
