@@ -4,7 +4,8 @@ import utils
 from utils import recorder
 
 from data import HSIDataLoader 
-from trainer import BaseTrainer, CrossTransformerTrainer
+from new_data import create_data_loader
+from trainer import get_trainer, BaseTrainer, CrossTransformerTrainer
 import evaluation
 
 
@@ -13,10 +14,11 @@ def train_by_param(param):
     recorder.reset()
     # 1. 数据生成
     dataloader = HSIDataLoader(param)
-    train_loader, test_loader, all_data_loader = dataloader.generate_torch_dataset() 
+    train_loader, test_loader = dataloader.generate_torch_dataset() 
+    # train_loader, test_loader, all_data_loader, _ = create_data_loader() 
 
     # 2. 训练和测试
-    trainer = CrossTransformerTrainer(param)
+    trainer = get_trainer(param)
     trainer.train(train_loader, test_loader)
     eval_res = trainer.final_eval(test_loader)
 
@@ -27,23 +29,40 @@ def train_by_param(param):
     return eval_res
 
 
-def run_default(param):
-    path_prefix = './res/'
-    if not os.path.exists(path_prefix):
-        os.makedirs(path_prefix)
+# include_path = {
+#     'conv2d.json',
+#     'vit_30.json',
+# }
 
-    print('start to train default...')
-    param['diffusion_sign'] = False 
-    param['pca'] = 200 
-    param['spectral_size'] =200
-    eval_res = train_by_param(param)
-    print('model eval done of default...')
-    path = '%s/default' % path_prefix 
-    recorder.to_file(path)
+include_path = {
+    # 'conv3d.json',
+    # 'conv2d.json',
+    # 'conv1d.json',
+    # 'vit_30.json',
+    'cross_param.json'
+}
 
+def run_all():
+    save_path_prefix = './res/'
+    if not os.path.exists(save_path_prefix):
+        os.makedirs(save_path_prefix)
 
+    for name in include_path:
+        path_param = './params/%s' % name
+        with open(path_param, 'r') as fin:
+            param = json.loads(fin.read())
+        print('start to train %s...' % name)
+        eval_res = train_by_param(param)
+        print('model eval done of %s...' % name)
+        path = '%s/%s' % (save_path_prefix, name) 
+        recorder.to_file(path)
 
-def run_diffusion(param):
+    
+
+def run_diffusion():
+    path_param = './params/cross_param.json'
+    with open(path_param, 'r') as fin:
+        param = json.loads(fin.read())
     path_prefix = './res/patch_8_pca_2000'
     if not os.path.exists(path_prefix):
         os.makedirs(path_prefix)
@@ -62,13 +81,8 @@ def run_diffusion(param):
 
 
 if __name__ == "__main__":
-    path_param = './params/cross_param.json'
-    with open(path_param, 'r') as fin:
-        param = json.loads(fin.read())
-
-    
-    # run_diffusion(param)
-    run_default(param)
+    # run_diffusion()
+    run_all()
     
     
 

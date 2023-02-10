@@ -1,5 +1,5 @@
 import PIL
-import time
+import time, json
 import torch
 import torchvision
 import torch.nn.functional as F
@@ -250,7 +250,7 @@ class HSINet(nn.Module):
         self.spectral_pos_embedding = nn.Parameter(torch.randn(1, self.new_spectral_size+1, dim))
         self.pixel_pos_embedding = nn.Parameter(torch.randn(1, self.new_image_size+1, dim))
 
-        mlp_head_dim = params['net']['mlp_head_dim'] 
+        mlp_head_dim = params['net'].get('mlp_head_dim', 8)
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(mlp_head_dim),
             nn.Linear(mlp_head_dim, num_classes)
@@ -331,9 +331,12 @@ class HSINet(nn.Module):
 
         
 if __name__ == '__main__':
-    model = HSINet()
+    path_param = './params/cross_param.json'
+    with open(path_param, 'r') as fin:
+        param = json.loads(fin.read())
+    model = HSINet(param)
     model.eval()
     print(model)
-    input = torch.randn(3, 200, 15, 15)
+    input = torch.randn(3, 200, 9, 9)
     y = model(input)
-    print(y)
+    print(y.shape)

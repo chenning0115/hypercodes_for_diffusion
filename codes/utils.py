@@ -18,6 +18,9 @@ class AvgrageMeter(object):
 
     def get_avg(self):
         return self.avg
+
+    def get_num(self):
+        return self.cnt
     
 class HSIRecoder(object):
     def __init__(self) -> None:

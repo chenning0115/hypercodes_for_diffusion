@@ -11,6 +11,10 @@ import time
 
 """ Training dataset"""
 
+
+TR_SIGN = 1
+TE_SIGN = 2
+
 class TrainDS(torch.utils.data.Dataset):
 
     def __init__(self, Xtrain, ytrain):
@@ -64,8 +68,6 @@ class HSIDataLoader(object):
         self.test_ratio = self.data_param.get('test_ratio', 0.9)
         self.batch_size = self.data_param.get('batch_size', 256)
         self.none_zero_num = self.data_param.get('none_zero_num', 0)
-        self.spectracl_size = self.data_param.get("spectral_size", 0)
-        self.append_dim = self.data_param.get("append_dim", False)
 
         self.diffusion_sign = self.data_param.get('diffusion_sign', False)
         self.diffusion_data_sign_path_prefix = self.data_param.get("diffusion_data_sign_path_prefix", '')
@@ -74,14 +76,17 @@ class HSIDataLoader(object):
     def load_data_from_diffusion(self):
         path = "%s/%s" % (self.diffusion_data_sign_path_prefix, self.diffusion_data_sign)
         if self.data_sign == "Indian":
-            data_ori = sio.loadmat('%s/Indian_pines_corrected.mat' % self.data_path_prefix)['indian_pines_corrected']
-            labels = sio.loadmat('%s/Indian_pines_gt.mat' % self.data_path_prefix)['indian_pines_gt']
+            all_data = sio.loadmat('%s/indian_pines/IndianPine.mat' % self.data_path_prefix)
+            data_ori = all_data['input']
+            TR = all_data['TR'] # train label
+            TE = all_data['TE'] # test label
+            labels = TR + TE
         data = np.load(path)
         ori_h, ori_w, _= data_ori.shape
         h, w, _= data.shape
         assert ori_h == h, ori_w == w
         print("load diffusion data shape is ", data.shape)
-        return data, labels 
+        return data, labels, TR, TE
 
     def load_data(self):
         data, labels = None, None
@@ -89,14 +94,15 @@ class HSIDataLoader(object):
             return self.load_data_from_diffusion()
 
         if self.data_sign == "Indian":
-            data = sio.loadmat('%s/Indian_pines_corrected.mat' % self.data_path_prefix)['indian_pines_corrected']
-            labels = sio.loadmat('%s/Indian_pines_gt.mat' % self.data_path_prefix)['indian_pines_gt']
-        elif self.data_sign == "PaviaU":
-            data = sio.loadmat('%s/PaviaU.mat' % self.data_path_prefix)['paviaU']
-            labels = sio.loadmat('%s/PaviaU_gt.mat' % self.data_path_prefix)['paviaU_gt'] 
+            all_data = sio.loadmat('%s/indian_pines/IndianPine.mat' % self.data_path_prefix)
+            data = all_data['input']
+            TR = all_data['TR'] # train label
+            TE = all_data['TE'] # test label
+            labels = TR + TE
+            return data, labels, TR, TE
         else:
             pass
-        return data, labels
+        return data, labels, None, None
 
     def _padding(self, X, margin=2):
         # pading with zeros
@@ -107,7 +113,7 @@ class HSIDataLoader(object):
         returnX[start_x:start_x+w, start_y:start_y+h,:] = X
         return returnX
 
-    def createImageCubes(self, X, y, windowSize=5, removeZeroLabels = True):
+    def createImageCubes(self, X, y, TR, TE, windowSize=5):
 
         # 给 X 做 padding
         margin = int((windowSize - 1) / 2)
@@ -115,19 +121,38 @@ class HSIDataLoader(object):
         # split patches
         patchesData = np.zeros((X.shape[0] * X.shape[1], windowSize, windowSize, X.shape[2]))
         patchesLabels = np.zeros((X.shape[0] * X.shape[1]))
+        patchesTR_TE = np.zeros((X.shape[0] * X.shape[1]))
         patchIndex = 0
         for r in range(margin, zeroPaddedX.shape[0] - margin):
             for c in range(margin, zeroPaddedX.shape[1] - margin):
+                tempy = y[r-margin, c-margin]
+                if tempy <= 0:
+                    continue
                 patch = zeroPaddedX[r - margin:r + margin + 1, c - margin:c + margin + 1]
                 patchesData[patchIndex, :, :, :] = patch
-                patchesLabels[patchIndex] = y[r-margin, c-margin]
+                patchesLabels[patchIndex] = tempy
+                temp_tr = TR[r-margin, c-margin] 
+                temp_te = TE[r-margin, c-margin]
+                assert not (temp_tr > 0 and temp_te > 0)
+                if temp_tr > 0 and temp_te > 0:
+                    print("here", temp_tr, temp_te, r, c)
+                if temp_tr > 0:
+                    patchesTR_TE[patchIndex] = TR_SIGN
+                elif temp_te > 0:
+                    patchesTR_TE[patchIndex] = TE_SIGN
                 patchIndex = patchIndex + 1
-        if removeZeroLabels:
-            patchesData = patchesData[patchesLabels>0,:,:,:]
-            patchesLabels = patchesLabels[patchesLabels>0]
-            patchesLabels -= 1
 
-        return patchesData, patchesLabels
+        patchesData = patchesData[patchesLabels>0,:,:,:]
+        patchesTR_TE = patchesTR_TE[patchesLabels>0]
+        patchesLabels = patchesLabels[patchesLabels>0]
+        patchesLabels -= 1
+
+        trainX = patchesData[patchesTR_TE==TR_SIGN, :, :]
+        trainY = patchesLabels[patchesTR_TE==TR_SIGN]
+        testX = patchesData[patchesTR_TE==TE_SIGN, :, :]
+        testY = patchesLabels[patchesTR_TE==TE_SIGN]
+
+        return trainX, trainY, testX, testY 
 
     def get_patches(self, X, Y, patch_size=3, remove_zero=True, none_zeros_num=0):
         w,h,c = X.shape
@@ -163,7 +188,7 @@ class HSIDataLoader(object):
 
     def generate_torch_dataset(self):
         #1. 根据data_sign load data
-        self.data, self.labels = self.load_data()
+        self.data, self.labels, TR, TE = self.load_data()
 
         #1.1 norm化
         norm_data = np.zeros(self.data.shape)
@@ -172,13 +197,10 @@ class HSIDataLoader(object):
             input_min = np.min(self.data[:,:,i])
             norm_data[:,:,i] = (self.data[:,:,i]-input_min)/(input_max-input_min)
         
-        if self.data_param['pca'] > 0:
+        if 'pca' in self.data_param and self.data_param['pca'] > 0:
             pca_data = self.applyPCA(norm_data, int(self.data_param['pca']))
             # norm_data = np.concatenate([norm_data, pca_data], axis=-1)
             norm_data = pca_data
-        if self.spectracl_size > 0: # 按照给定的spectral size截取数据
-            norm_data = norm_data[:,:,:self.spectracl_size]
-        
         # else:
             # norm_data = np.concatenate([norm_data, norm_data], axis=-1) #TODO: 暂时double数据
 
@@ -187,14 +209,7 @@ class HSIDataLoader(object):
         # X_patchs, Y_patchs =  self.get_patches(norm_data, self.labels, patch_size=self.patch_size, remove_zero=self.remove_zeros,
                                     # none_zeros_num=self.none_zero_num)
         
-        X_patchs, Y_patchs = self.createImageCubes(norm_data, self.labels, windowSize=self.patch_size, removeZeroLabels = True)
-        print('[data] data patches shape data=%s, label=%s' % (str(X_patchs.shape), str(Y_patchs.shape)))
-        #3. 随机区分train和test
-        X_train, X_test, Y_train, Y_test = train_test_split(X_patchs,
-                                                        Y_patchs,
-                                                        test_size=self.test_ratio,
-                                                        random_state=345,
-                                                        stratify=Y_patchs)
+        X_train, Y_train, X_test, Y_test = self.createImageCubes(norm_data, self.labels, TR, TE, windowSize=self.patch_size)
         print('------[data] split data to train, test------')
         print("X_train shape : %s" % str(X_train.shape))
         print("Y_train shape : %s" % str(Y_train.shape))
@@ -202,17 +217,8 @@ class HSIDataLoader(object):
         print("Y_test shape : %s" % str(Y_test.shape))
 
         #4. 调整shape来满足torch使用
-        if not self.append_dim:
-            X_train = X_train.transpose((0, 3, 1, 2)) # (batch, spectral, h, w)                                               
-            X_test = X_test.transpose((0, 3, 1, 2)) # (batch, spectral, h, w)                                               
-        else:
-            # 先增加维度 作为3d cnn使用
-            X_train = np.expand_dims(X_train, 1)
-            X_train = X_train.transpose((0, 1, 4, 2, 3)) # (batch, spectral, h, w)                                               
-            X_test = np.expand_dims(X_test, 1)
-            X_test = X_test.transpose((0, 1, 4, 2, 3)) # (batch, spectral, h, w)                                               
-
-
+        X_train = X_train.transpose((0, 3, 1, 2)) # (batch, spectral, h, w)                                               
+        X_test = X_test.transpose((0, 3, 1, 2)) # (batch, spectral, h, w)                                               
         print('------[data] after transpose train, test------')
         print("X_train shape : %s" % str(X_train.shape))
         print("Y_train shape : %s" % str(Y_train.shape))
@@ -232,11 +238,12 @@ class HSIDataLoader(object):
                                                 num_workers=0,
                                                 drop_last=False
                                                 )
-        return train_loader, test_loader
+        
+        return train_loader, test_loader 
 
        
 
 
 if __name__ == "__main__":
-    dataloader = HSIDataLoader({})
+    dataloader = HSIDataLoader({"data":{}})
     train_loader, test_loader = dataloader.generate_torch_dataset()

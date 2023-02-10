@@ -5,6 +5,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import cross_transformer 
+import conv1d
+import conv2d
+import conv3d
 import utils
 from utils import recorder
 from evaluation import HSIEvaluation
@@ -43,18 +46,18 @@ class BaseTrainer(object):
                 total_loss += loss.item()
                 epoch_avg_loss.update(loss.item(), data.shape[0])
             recorder.append_index_value("epoch_loss", epoch + 1, epoch_avg_loss.get_avg())
-            print('[Epoch: %d]  [epoch_loss: %.5f]  [all_epoch_loss: %.5f] [current_batch_loss: %.5f]' % (epoch + 1,
+            print('[Epoch: %d]  [epoch_loss: %.5f]  [all_epoch_loss: %.5f] [current_batch_loss: %.5f] [batch_num: %s]' % (epoch + 1,
                                                                              epoch_avg_loss.get_avg(), 
                                                                              total_loss / (epoch + 1),
-                                                                             loss.item()))
+                                                                             loss.item(), epoch_avg_loss.get_num()))
             # 一定epoch下进行一次eval
-            if test_loader and (epoch+1) % 10 == 0 :
+            if test_loader and (epoch+1) % 10 == 0:
                 y_pred_test, y_test = self.test(test_loader)
                 temp_res = self.evalator.eval(y_test, y_pred_test)
                 recorder.append_index_value("train_oa", epoch+1, temp_res['oa'])
                 recorder.append_index_value("train_aa", epoch+1, temp_res['aa'])
                 recorder.append_index_value("train_kappa", epoch+1, temp_res['kappa'])
-                print('[--TEST--] [Epoch: %d] [oa: %.5f] [aa: %.5f] [kappa: %.5f]' % (epoch+1, temp_res['oa'], temp_res['aa'], temp_res['kappa']))
+                print('[--TEST--] [Epoch: %d] [oa: %.5f] [aa: %.5f] [kappa: %.5f] [num: %s]' % (epoch+1, temp_res['oa'], temp_res['aa'], temp_res['kappa'], str(y_test.shape)))
             
         print('Finished Training')
         return True
@@ -102,7 +105,61 @@ class CrossTransformerTrainer(BaseTrainer):
         self.weight_decay = self.train_params.get('weight_decay', 5e-3)
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
+class Conv1dTrainer(BaseTrainer):
+    def __init__(self, params) -> None:
+        super().__init__(params)
 
-    
 
+    def real_init(self):
+        # net
+        self.net = conv1d.Conv1d(self.params).to(self.device)
+        # loss
+        self.criterion = nn.CrossEntropyLoss()
+        # optimizer
+        self.lr = self.train_params.get('lr', 0.001)
+        self.weight_decay = self.train_params.get('weight_decay', 5e-3)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+
+class Conv2dTrainer(BaseTrainer):
+    def __init__(self, params) -> None:
+        super().__init__(params)
+
+
+    def real_init(self):
+        # net
+        self.net = conv2d.Conv2d(self.params).to(self.device)
+        # loss
+        self.criterion = nn.CrossEntropyLoss()
+        # optimizer
+        self.lr = self.train_params.get('lr', 0.001)
+        self.weight_decay = self.train_params.get('weight_decay', 5e-3)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+
+class Conv3dTrainer(BaseTrainer):
+    def __init__(self, params) -> None:
+        super().__init__(params)
+
+
+    def real_init(self):
+        # net
+        self.net = conv3d.Conv3d(self.params).to(self.device)
+        # loss
+        self.criterion = nn.CrossEntropyLoss()
+        # optimizer
+        self.lr = self.train_params.get('lr', 0.001)
+        self.weight_decay = self.train_params.get('weight_decay', 5e-3)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+
+def get_trainer(params):
+    trainer_type = params['net']['trainer']
+    if trainer_type == "cross_trainer":
+        return CrossTransformerTrainer(params)
+    if trainer_type == "conv1d":
+        return Conv1dTrainer(params)
+    if trainer_type == "conv2d":
+        return Conv2dTrainer(params)
+    if trainer_type == "conv3d":
+        return Conv3dTrainer(params)
+
+    assert Exception("Trainer not implemented!")
 
