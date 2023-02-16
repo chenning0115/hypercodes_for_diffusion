@@ -76,6 +76,11 @@ class HSIDataLoader(object):
         if self.data_sign == "Indian":
             data_ori = sio.loadmat('%s/Indian_pines_corrected.mat' % self.data_path_prefix)['indian_pines_corrected']
             labels = sio.loadmat('%s/Indian_pines_gt.mat' % self.data_path_prefix)['indian_pines_gt']
+        if self.data_sign == "Pavia":
+            data_ori = sio.loadmat('%s/PaviaU.mat' % self.data_path_prefix)['paviaU']
+            labels = sio.loadmat('%s/PaviaU_gt.mat' % self.data_path_prefix)['paviaU_gt'] 
+        else:
+            pass
         data = np.load(path)
         ori_h, ori_w, _= data_ori.shape
         h, w, _= data.shape
@@ -91,7 +96,7 @@ class HSIDataLoader(object):
         if self.data_sign == "Indian":
             data = sio.loadmat('%s/Indian_pines_corrected.mat' % self.data_path_prefix)['indian_pines_corrected']
             labels = sio.loadmat('%s/Indian_pines_gt.mat' % self.data_path_prefix)['indian_pines_gt']
-        elif self.data_sign == "PaviaU":
+        elif self.data_sign == "Pavia":
             data = sio.loadmat('%s/PaviaU.mat' % self.data_path_prefix)['paviaU']
             labels = sio.loadmat('%s/PaviaU_gt.mat' % self.data_path_prefix)['paviaU_gt'] 
         else:

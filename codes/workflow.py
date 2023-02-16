@@ -39,7 +39,8 @@ include_path = {
     # 'conv2d.json',
     # 'conv1d.json',
     # 'vit_30.json',
-    'cross_param.json'
+    # 'cross_param.json'
+    'pavia_cross_param.json'
 }
 
 def run_all():
@@ -60,22 +61,29 @@ def run_all():
     
 
 def run_diffusion():
-    path_param = './params/cross_param.json'
+    path_param = './params/pavia_cross_param.json'
     with open(path_param, 'r') as fin:
         param = json.loads(fin.read())
-    path_prefix = './res/patch_8_pca_2000'
+    path_prefix = './res/pavia'
     if not os.path.exists(path_prefix):
         os.makedirs(path_prefix)
 
-    for t in [5,10,100,200,500]:
-        for index in [0,1,2]:
-            name = "t%s_%s_full.pkl.npy" % (t, index)
-            print('start to train %s...' % name)
-            param['diffusion_data_sign'] = name
-            eval_res = train_by_param(param)
-            print('model eval done of %s...' % name)
-            path = '%s/indian_diffusion_%s' % (path_prefix, name) 
-            recorder.to_file(path)
+    #for t in [5,10,100,200,500]:
+    t = 10
+    index = 2
+    for t in [5, 10, 100, 200]:
+        for patch_size in [9,15]:
+            for test_ratio in [0.95, 0.97]:
+                name = "t%s_%s_full.pkl.npy" % (10, 2)
+                sign = "t%s_%s_%s" % (t, patch_size, test_ratio)
+                print('start to train %s...' % name)
+                param['data']['diffusion_data_sign'] = name
+                param['data']['patch_size'] = patch_size
+                param['data']['test_ratio'] = test_ratio
+                eval_res = train_by_param(param)
+                print('model eval done of %s...' % sign)
+                path = '%s/pavia_diffusion_%s' % (path_prefix, sign) 
+                recorder.to_file(path)
 
 
 
