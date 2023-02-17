@@ -1,4 +1,4 @@
-
+import os, sys
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms, datasets
@@ -48,17 +48,23 @@ class LinearBlock(nn.Module):
     def __init__(self, input_dim, output_dim) -> None:
         super().__init__()
         self.linear = nn.Linear(input_dim, output_dim) 
-        self.relu = nn.ReLU()
+        self.relu = nn.Sigmoid()
     
     def forward(self, x):
         x = self.relu(self.linear(x))
+        # x = self.linear(x)
         return x
 
 class AE(nn.Module):
     def __init__(self):
         super(AE, self).__init__()
-        down_dims = [3328, 1000, 103]
-        up_dims = [103, 1000, 3328]
+        # --------Indian-----------
+        # down_dims = [6400, 1000, 200]
+        # up_dims = [200, 1000, 6400]
+        # --------pavia-----------
+        down_dims = [6400, 1000, 200]
+        up_dims = [200, 1000, 6400]
+
         self.encoder = nn.ModuleList(
             [LinearBlock(down_dims[i], down_dims[i+1]) for i in range(len(down_dims)-1)]
         )
@@ -67,7 +73,9 @@ class AE(nn.Module):
             # [nn.Sigmoid()]
         )
 
-    def forward(self, x):
+        self.save_feature = []
+
+    def forward(self, x, save_feature=None):
         """
         :param [b, channel]:
         :return [b, channel]:
@@ -77,33 +85,55 @@ class AE(nn.Module):
         for e in self.encoder:
             x = e(x)
         # decoder
+        if save_feature:
+            temp = x.detach().cpu().numpy()
+            self.save_feature.append(temp)
         for d in self.decoder:
             x = d(x)
         # reshape
         return x
 
-def test(model, test_loader, calloss=False):
+    def clear_save_feature(self):
+        self.save_feature = []
+    
+    def return_save_feature(self):
+        return np.concatenate(self.save_feature, axis=0)
+         
+
+
+def test(model, test_loader, ori_shape, path_save_feature):
     count = 0
     model.eval()
     y_pred_test = 0
     y_test = 0
+    model.clear_save_feature()
     for inputs, labels in test_loader:
-        inputs = inputs
-        outputs = model(inputs)
-        outputs = np.argmax(outputs.detach().cpu().numpy(), axis=1)
+        inputs = inputs.to(device)
+        outputs = model(inputs, save_feature=True)
+        outputs = outputs.detach().cpu().numpy()
         if count == 0:
             y_pred_test = outputs
-            y_test = labels
+            y_test = inputs.detach().cpu().numpy()
             count = 1
         else:
             y_pred_test = np.concatenate((y_pred_test, outputs))
-            y_test = np.concatenate((y_test, labels))
-    if calloss:
-        print("test loss = %s " % np.mean(y_pred_test - y_test))
+            y_test = np.concatenate((y_test, inputs.detach().cpu().numpy()))
+    save_feature = model.return_save_feature() 
+    # reshape
+    ori_h, ori_w, ori_c = ori_shape
+    all_batch, new_c = save_feature.shape
+    assert ori_h * ori_w == all_batch
+    save_feature = save_feature.reshape((ori_h, ori_w, new_c))
+    print("save_feature_shape is", save_feature.shape)
+    loss = np.mean(np.square(y_pred_test - y_test))
+    print("test loss = %s " % loss)
+    np.save("%s" % (path_save_feature), save_feature)
+
     return y_pred_test, y_test
 
-def main(path_data):
+def main(path_data, prefix_path_save_feature):
     data = np.load(path_data)
+    h, w, c = data.shape
     #1.1 norm化
     norm_data = np.zeros(data.shape)
     for i in range(data.shape[2]):
@@ -111,23 +141,32 @@ def main(path_data):
         input_min = np.min(data[:,:,i])
         norm_data[:,:,i] = (data[:,:,i]-input_min)/(input_max-input_min)
     data = norm_data
-
     print('data.shape=', data.shape)
-    h, w, c = data.shape
     data = data.reshape((h*w, c))
     label = np.zeros((h*w))
-    data_set = TrainDS(data, label)
-    train_loader = DataLoader(data_set, batch_size=1024, shuffle=True)
+    trainset = TrainDS(data, label)
+    testset = TrainDS(data, label)
+    train_loader = torch.utils.data.DataLoader(dataset=trainset,
+                                                batch_size=2048,
+                                                shuffle=True,
+                                                drop_last=False
+                                                )
+    test_loader = torch.utils.data.DataLoader(dataset=testset,
+                                                batch_size=2048,
+                                                shuffle=False,
+                                                num_workers=0,
+                                                drop_last=False
+                                                )
     epochs = 1000
-    lr = 1e-3
-    model = AE()
+    lr = 5e-4
+    model = AE().to(device)
     criteon = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     for epoch in range(epochs):
-        # 不需要label，所以用一个占位符"_"代替
         model.train()
         for batchidx, (x, _) in enumerate(train_loader):
+            x = x.to(device)
             x_hat = model(x)
             loss = criteon(x_hat, x)
 
@@ -136,12 +175,18 @@ def main(path_data):
             loss.backward()
             optimizer.step()
         print(epoch, 'loss:', loss.item())
-        if epoch % 10 == 0:
-            test(model, train_loader)
+        if not os.path.exists(prefix_path_save_feature): 
+            os.makedirs(prefix_path_save_feature)
+            
+        if epoch % 50 == 0:
+            path_save_feature = "%s/%s" % (prefix_path_save_feature, epoch)
+            test(model, test_loader, (h,w,c), path_save_feature)
             
 
+
 if __name__ == '__main__':
-    diffusion_data_sign_path_prefix =  "../../data/pavia_unet3d_patch16_without_downsample_kernal5_fix/save_feature"
+    diffusion_data_sign_path_prefix =  "../../data/unet3d_patch16_without_downsample_kernal5_fix/save_feature"
     diffusion_data_sign = "t10_2_full.pkl.npy"
     path = "%s/%s" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
-    main(path)
+    prefix_path_save_feature = "%s/%s_autoencoder_2layer" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
+    main(path, prefix_path_save_feature)

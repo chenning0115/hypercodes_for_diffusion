@@ -66,6 +66,8 @@ class HSIDataLoader(object):
         self.none_zero_num = self.data_param.get('none_zero_num', 0)
         self.spectracl_size = self.data_param.get("spectral_size", 0)
         self.append_dim = self.data_param.get("append_dim", False)
+        self.use_norm = self.data_param.get("use_norm", True)
+
 
         self.diffusion_sign = self.data_param.get('diffusion_sign', False)
         self.diffusion_data_sign_path_prefix = self.data_param.get("diffusion_data_sign_path_prefix", '')
@@ -171,12 +173,14 @@ class HSIDataLoader(object):
         self.data, self.labels = self.load_data()
 
         #1.1 norm化
-        norm_data = np.zeros(self.data.shape)
-        for i in range(self.data.shape[2]):
-            input_max = np.max(self.data[:,:,i])
-            input_min = np.min(self.data[:,:,i])
-            norm_data[:,:,i] = (self.data[:,:,i]-input_min)/(input_max-input_min)
-        
+        if self.use_norm:
+            norm_data = np.zeros(self.data.shape)
+            for i in range(self.data.shape[2]):
+                input_max = np.max(self.data[:,:,i])
+                input_min = np.min(self.data[:,:,i])
+                norm_data[:,:,i] = (self.data[:,:,i]-input_min)/(input_max-input_min)
+        else:
+            norm_data = self.data 
         if self.data_param['pca'] > 0:
             pca_data = self.applyPCA(norm_data, int(self.data_param['pca']))
             # norm_data = np.concatenate([norm_data, pca_data], axis=-1)
