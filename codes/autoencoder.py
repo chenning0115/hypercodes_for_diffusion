@@ -57,12 +57,12 @@ class LinearBlock(nn.Module):
 class AE(nn.Module):
     def __init__(self):
         super(AE, self).__init__()
-        down_dims = [6400, 1000, 200]
-        up_dims = [200, 1000, 6400]
-        self.encoder = nn.Sequential(
+        down_dims = [3328, 1000, 103]
+        up_dims = [103, 1000, 3328]
+        self.encoder = nn.ModuleList(
             [LinearBlock(down_dims[i], down_dims[i+1]) for i in range(len(down_dims)-1)]
         )
-        self.decoder = nn.Sequential(
+        self.decoder = nn.ModuleList(
             [LinearBlock(up_dims[i], up_dims[i+1]) for i in range(len(up_dims)-1)]
             # [nn.Sigmoid()]
         )
@@ -74,9 +74,11 @@ class AE(nn.Module):
         """
         
         # encoder
-        x = self.encoder(x)
+        for e in self.encoder:
+            x = e(x)
         # decoder
-        x = self.decoder(x)
+        for d in self.decoder:
+            x = d(x)
         # reshape
         return x
 
@@ -102,12 +104,20 @@ def test(model, test_loader, calloss=False):
 
 def main(path_data):
     data = np.load(path_data)
+    #1.1 norm化
+    norm_data = np.zeros(data.shape)
+    for i in range(data.shape[2]):
+        input_max = np.max(data[:,:,i])
+        input_min = np.min(data[:,:,i])
+        norm_data[:,:,i] = (data[:,:,i]-input_min)/(input_max-input_min)
+    data = norm_data
+
     print('data.shape=', data.shape)
     h, w, c = data.shape
     data = data.reshape((h*w, c))
     label = np.zeros((h*w))
     data_set = TrainDS(data, label)
-    train_loader = DataLoader(data_set, batch_size=256, shuffle=True)
+    train_loader = DataLoader(data_set, batch_size=1024, shuffle=True)
     epochs = 1000
     lr = 1e-3
     model = AE()
@@ -125,7 +135,7 @@ def main(path_data):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print(epoch, 'loss:', loss.item())
+        print(epoch, 'loss:', loss.item())
         if epoch % 10 == 0:
             test(model, train_loader)
             
