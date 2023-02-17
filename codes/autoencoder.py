@@ -62,8 +62,8 @@ class AE(nn.Module):
         # down_dims = [6400, 1000, 200]
         # up_dims = [200, 1000, 6400]
         # --------pavia-----------
-        down_dims = [6400, 1000, 200]
-        up_dims = [200, 1000, 6400]
+        down_dims = [3328, 103]
+        up_dims = [103, 3328]
 
         self.encoder = nn.ModuleList(
             [LinearBlock(down_dims[i], down_dims[i+1]) for i in range(len(down_dims)-1)]
@@ -147,12 +147,12 @@ def main(path_data, prefix_path_save_feature):
     trainset = TrainDS(data, label)
     testset = TrainDS(data, label)
     train_loader = torch.utils.data.DataLoader(dataset=trainset,
-                                                batch_size=2048,
+                                                batch_size=5120,
                                                 shuffle=True,
                                                 drop_last=False
                                                 )
     test_loader = torch.utils.data.DataLoader(dataset=testset,
-                                                batch_size=2048,
+                                                batch_size=5120,
                                                 shuffle=False,
                                                 num_workers=0,
                                                 drop_last=False
@@ -181,12 +181,21 @@ def main(path_data, prefix_path_save_feature):
         if epoch % 50 == 0:
             path_save_feature = "%s/%s" % (prefix_path_save_feature, epoch)
             test(model, test_loader, (h,w,c), path_save_feature)
-            
-
-
-if __name__ == '__main__':
+    
+def run_indian():
     diffusion_data_sign_path_prefix =  "../../data/unet3d_patch16_without_downsample_kernal5_fix/save_feature"
     diffusion_data_sign = "t10_2_full.pkl.npy"
     path = "%s/%s" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
     prefix_path_save_feature = "%s/%s_autoencoder_2layer" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
     main(path, prefix_path_save_feature)
+
+def run_pavia():
+    diffusion_data_sign_path_prefix =  "../../data/pavia_unet3d_patch16_without_downsample_kernal5_fix/save_feature"
+    diffusion_data_sign = "t10_2_full.pkl.npy"
+    path = "%s/%s" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
+    prefix_path_save_feature = "%s/%s_autoencoder_1layer" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
+    main(path, prefix_path_save_feature)
+
+
+if __name__ == '__main__':
+   run_pavia() 

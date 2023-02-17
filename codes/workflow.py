@@ -40,7 +40,8 @@ include_path = {
     # 'conv1d.json',
     # 'vit_30.json',
     # 'cross_param.json'
-    'indian_cross_param_autoencoder.json'
+    # 'indian_cross_param_autoencoder.json'
+    'pavia_cross_param_autoencoder.json'
     # 'pavia_cross_param.json'
 }
 
