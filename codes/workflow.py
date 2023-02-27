@@ -41,8 +41,9 @@ include_path = {
     # 'vit_30.json',
     # 'cross_param.json'
     # 'indian_cross_param_autoencoder.json'
-    'pavia_cross_param_autoencoder.json'
+    # 'pavia_cross_param_autoencoder.json'
     # 'pavia_cross_param.json'
+    'houston_cross_param_autoencoder.json'
 }
 
 def run_all():

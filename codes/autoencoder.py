@@ -62,8 +62,8 @@ class AE(nn.Module):
         # down_dims = [6400, 1000, 200]
         # up_dims = [200, 1000, 6400]
         # --------pavia-----------
-        down_dims = [3328, 103]
-        up_dims = [103, 3328]
+        down_dims = [4608, 144]
+        up_dims = [144, 4608]
 
         self.encoder = nn.ModuleList(
             [LinearBlock(down_dims[i], down_dims[i+1]) for i in range(len(down_dims)-1)]
@@ -134,8 +134,10 @@ def test(model, test_loader, ori_shape, path_save_feature):
 def main(path_data, prefix_path_save_feature):
     data = np.load(path_data)
     h, w, c = data.shape
+    print("load data done. shape is ", data.shape)
     #1.1 norm化
     norm_data = np.zeros(data.shape)
+    
     for i in range(data.shape[2]):
         input_max = np.max(data[:,:,i])
         input_min = np.min(data[:,:,i])
@@ -196,6 +198,14 @@ def run_pavia():
     prefix_path_save_feature = "%s/%s_autoencoder_1layer" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
     main(path, prefix_path_save_feature)
 
+def run_houston():
+    diffusion_data_sign_path_prefix =  "../../data/houston_unet3d_patch16_without_downsample_kernal5_fix/save_feature"
+    diffusion_data_sign = "t10_2_full.pkl.npy"
+    path = "%s/%s" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
+    prefix_path_save_feature = "%s/%s_autoencoder_1layer" % (diffusion_data_sign_path_prefix, diffusion_data_sign)
+    main(path, prefix_path_save_feature)
+
 
 if __name__ == '__main__':
-   run_pavia() 
+   # run_pavia() 
+   run_houston()
