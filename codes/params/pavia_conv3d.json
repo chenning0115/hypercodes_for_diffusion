@@ -1,0 +1,21 @@
+{
+    "data":{
+        "data_sign":"Pavia",
+        "diffusion_sign":false,
+        "patch_size":9,
+        "test_ratio":0.98,
+        "batch_size":512,
+        "num_classes":9,
+        "pca":0,
+        "spectral_size":103,
+        "append_dim":true
+    },
+    "net": {
+        "trainer" : "conv3d"
+    },
+    "train": {
+        "epochs": 200,
+        "lr":0.001,
+        "weight_decay":0
+    }
+}

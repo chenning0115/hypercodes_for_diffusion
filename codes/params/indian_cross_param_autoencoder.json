@@ -1,7 +1,7 @@
 {
     "data":{
         "data_sign":"Indian",
-        "diffusion_sign":false,
+        "diffusion_sign":true,
         "diffusion_data_sign_path_prefix": "../../data/unet3d_patch16_without_downsample_kernal5_fix/save_feature/t10_2_full.pkl.npy_autoencoder",
         "diffusion_data_sign": "950_0.0027298671.npy",
         "patch_size":15,
