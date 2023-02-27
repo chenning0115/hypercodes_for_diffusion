@@ -81,6 +81,9 @@ class HSIDataLoader(object):
         if self.data_sign == "Pavia":
             data_ori = sio.loadmat('%s/PaviaU.mat' % self.data_path_prefix)['paviaU']
             labels = sio.loadmat('%s/PaviaU_gt.mat' % self.data_path_prefix)['paviaU_gt'] 
+        if self.data_sign == "Houston":
+            data_ori = sio.loadmat('%s/Houston.mat' % self.data_path_prefix)['img']
+            labels = sio.loadmat('%s/Houston_gt.mat' % self.data_path_prefix)['Houston_gt']
         else:
             pass
         data = np.load(path)
@@ -101,8 +104,9 @@ class HSIDataLoader(object):
         elif self.data_sign == "Pavia":
             data = sio.loadmat('%s/PaviaU.mat' % self.data_path_prefix)['paviaU']
             labels = sio.loadmat('%s/PaviaU_gt.mat' % self.data_path_prefix)['paviaU_gt'] 
-        else:
-            pass
+        elif self.data_sign == "Houston":
+            data = sio.loadmat('%s/Houston.mat' % self.data_path_prefix)['img']
+            labels = sio.loadmat('%s/Houston_gt.mat' % self.data_path_prefix)['Houston_gt']
         return data, labels
 
     def _padding(self, X, margin=2):
@@ -113,6 +117,12 @@ class HSIDataLoader(object):
         start_x, start_y = margin, margin
         returnX[start_x:start_x+w, start_y:start_y+h,:] = X
         return returnX
+    
+    def get_valid_num(self, y):
+        tempy = y.reshape(-1)
+        validy = tempy[tempy > 0]
+        print('valid y shape is ', validy.shape)
+        return validy.shape[0]
 
     def createImageCubes(self, X, y, windowSize=5, removeZeroLabels = True):
 
@@ -120,11 +130,14 @@ class HSIDataLoader(object):
         margin = int((windowSize - 1) / 2)
         zeroPaddedX = self._padding(X, margin=margin)
         # split patches
-        patchesData = np.zeros((X.shape[0] * X.shape[1], windowSize, windowSize, X.shape[2]))
-        patchesLabels = np.zeros((X.shape[0] * X.shape[1]))
+        validy_size = self.get_valid_num(y)
+        patchesData = np.zeros((validy_size, windowSize, windowSize, X.shape[2]))
+        patchesLabels = np.zeros((validy_size))
         patchIndex = 0
         for r in range(margin, zeroPaddedX.shape[0] - margin):
             for c in range(margin, zeroPaddedX.shape[1] - margin):
+                if not y[r-margin, c-margin] > 0:
+                    continue
                 patch = zeroPaddedX[r - margin:r + margin + 1, c - margin:c + margin + 1]
                 patchesData[patchIndex, :, :, :] = patch
                 patchesLabels[patchIndex] = y[r-margin, c-margin]

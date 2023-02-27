@@ -47,8 +47,7 @@ include_path = {
     # 'pavia_cross_param_autoencoder.json'
     # 'pavia_cross_param.json'
 
-    'indian_cross_param_test.json'
-
+    'houston_cross_param_autoencoder.json'
 }
 
 def run_all():
