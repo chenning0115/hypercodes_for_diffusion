@@ -5,7 +5,7 @@
         "diffusion_data_sign_path_prefix": "../../data/unet3d_patch16_without_downsample_kernal5_fix/save_feature",
         "diffusion_data_sign": "t10_2_full.pkl.npy",
         "patch_size":15,
-        "test_ratio":0.95,
+        "test_ratio":0.90,
         "batch_size":64,
         "num_classes":16,
         "pca":1000,
@@ -21,8 +21,9 @@
         "conv3d_padding":[2,1,1]
     },
     "train": {
-        "epochs": 200,
-        "lr":0.001,
+        "epochs": 70,
+        "lr":0.0002,
         "weight_decay":0
     }
 }
+

@@ -3,7 +3,7 @@
         "data_sign":"Indian",
         "diffusion_sign":false,
         "patch_size":1,
-        "test_ratio":0.95,
+        "test_ratio":0.90,
         "batch_size":512,
         "num_classes":16,
         "pca":0,

@@ -38,14 +38,17 @@ include_path = {
     # 'conv3d.json',
     # 'conv2d.json',
     # 'conv1d.json',
-    # 'vit_30.json',
-    # 'cross_param.json'
+    # 'vit_pca200.json',
     # 'indian_cross_param_autoencoder.json'
+
+    # 'pavia_conv1d.json',
+    # 'pavia_conv2d.json',
+    # 'pavia_conv3d.json',
     # 'pavia_cross_param_autoencoder.json'
     # 'pavia_cross_param.json'
-    # 'pavia_conv3d.json',
-    'pavia_conv2d.json',
-    'pavia_conv1d.json',
+
+    'indian_cross_param_test.json'
+
 }
 
 def run_all():

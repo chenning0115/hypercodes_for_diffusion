@@ -3,7 +3,7 @@
         "data_sign":"Pavia",
         "diffusion_sign":false,
         "patch_size":1,
-        "test_ratio":0.98,
+        "test_ratio":0.95,
         "batch_size":512,
         "num_classes":9,
         "pca":0,
@@ -14,7 +14,7 @@
         "trainer" : "conv1d"
     },
     "train": {
-        "epochs": 500,
+        "epochs": 100,
         "lr":0.001,
         "weight_decay":0
     }

@@ -21,8 +21,8 @@
         "conv3d_padding":[2,1,1]
     },
     "train": {
-        "epochs": 200,
-        "lr":0.001,
+        "epochs": 70,
+        "lr":0.0002,
         "weight_decay":0
     }
 }
