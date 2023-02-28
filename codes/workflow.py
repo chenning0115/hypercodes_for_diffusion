@@ -47,7 +47,10 @@ include_path = {
     # 'pavia_cross_param_autoencoder.json'
     # 'pavia_cross_param.json'
 
-    'houston_cross_param_autoencoder.json'
+    # 'houston_conv1d.json',
+    # 'houston_conv2d.json',
+    'houston_conv3d.json',
+    # 'houston_cross_param_autoencoder.json'
 }
 
 def run_all():

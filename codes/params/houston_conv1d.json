@@ -1,0 +1,22 @@
+{
+    "data":{
+        "data_sign":"Houston",
+        "diffusion_sign":false,
+        "patch_size":1,
+        "test_ratio":0.90,
+        "batch_size":512,
+        "num_classes":15,
+        "pca":0,
+        "spectral_size":144,
+        "append_dim":true
+    },
+    "net": {
+        "trainer" : "conv1d"
+    },
+    "train": {
+        "epochs": 100,
+        "lr":0.001,
+        "weight_decay":0
+    }
+}
+
