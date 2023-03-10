@@ -1,0 +1,23 @@
+{
+    "data":{
+        "if_numpy": true,
+        "data_sign":"Pavia",
+        "diffusion_sign":false,
+        "test_ratio":0.95,
+        "num_classes":9,
+        "pca":0,
+        "spectral_size":103
+    },
+    "net": {
+        "trainer" : "svm",
+        "kernel" : "rbf",
+        "gamma" : 0.25,
+        "c":1000
+    },
+    "train": {
+        "epochs": 500,
+        "lr":0.001,
+        "weight_decay":0
+    }
+}
+

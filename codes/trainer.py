@@ -12,6 +12,66 @@ import utils
 from utils import recorder
 from evaluation import HSIEvaluation
 
+from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+
+
+class SKlearnTrainer(object):
+    def __init__(self, params) -> None:
+        self.params = params
+        self.net_params = params['net']
+        self.train_params = params['train']
+        self.evalator = HSIEvaluation(param=params)
+
+
+        self.model = None
+        self.real_init()
+
+    def real_init(self):
+        pass
+        
+
+    def train(self, trainX, trainY):
+        self.model.fit(trainX, trainY)
+        print(self.model, "trian done.") 
+
+
+    def final_eval(self, testX, testY):
+        predictY = self.model.predict(testX)
+        temp_res = self.evalator.eval(testY, predictY)
+        print(temp_res['oa'], temp_res['aa'], temp_res['kappa'])
+        return temp_res
+
+            
+class SVMTrainer(SKlearnTrainer):
+    def __init__(self, params) -> None:
+        super(SVMTrainer, self).__init__(params)
+
+    def real_init(self):
+        kernel = self.net_params.get('kernel', 'rbf')
+        gamma = self.net_params.get('gamma', 'scale')
+        c = self.net_params.get('c', 1)
+        self.model = svm.SVC(C=c, kernel=kernel, gamma=gamma)
+
+class RandomForestTrainer(SKlearnTrainer):
+    def __init__(self, params) -> None:
+        super().__init__(params)
+
+    def real_init(self):
+        n_estimators = self.net_params.get('n_estimators', 200)
+        self.model = RandomForestClassifier(n_estimators = n_estimators, max_features="auto", criterion="entropy")
+
+class KNNTrainer(SKlearnTrainer):
+    def __init__(self, params) -> None:
+        super().__init__(params)
+
+    def real_init(self):
+        n = self.net_params.get('n', 10)
+        self.model = KNeighborsClassifier(n_neighbors=n)
+
+
+
 class BaseTrainer(object):
     def __init__(self, params) -> None:
         self.params = params
@@ -160,6 +220,12 @@ def get_trainer(params):
         return Conv2dTrainer(params)
     if trainer_type == "conv3d":
         return Conv3dTrainer(params)
+    if trainer_type == "svm":
+        return SVMTrainer(params) 
+    if trainer_type == "random_forest":
+        return RandomForestTrainer(params)
+    if trainer_type == "knn":
+        return KNNTrainer(params)
 
     assert Exception("Trainer not implemented!")
 

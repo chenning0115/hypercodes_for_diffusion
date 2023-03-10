@@ -1,0 +1,20 @@
+{
+    "data":{
+        "if_numpy": true,
+        "data_sign":"Indian",
+        "diffusion_sign":false,
+        "test_ratio":0.90,
+        "num_classes":16,
+        "pca":0,
+        "spectral_size":200
+    },
+    "net": {
+        "trainer" : "knn",
+        "n" : 5
+    },
+    "train": {
+    }
+}
+
+
+

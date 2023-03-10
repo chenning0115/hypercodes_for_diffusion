@@ -58,6 +58,7 @@ class HSIDataLoader(object):
         self.labels = None #原始读入Y数据 shape=(h,w,1)
 
         # 参数设置
+        self.if_numpy = self.data_param.get('if_numpy', False)
         self.data_sign = self.data_param.get('data_sign', 'Indian')
         self.patch_size = self.data_param.get('patch_size', 13) # n * n
         self.remove_zeros = self.data_param.get('remove_zeros', True)
@@ -181,7 +182,54 @@ class HSIDataLoader(object):
         newX = np.reshape(newX, (X.shape[0], X.shape[1], numComponents))
         return newX
 
+    def generate_numpy_dataset(self):
+        # 1. read data
+        self.data, self.labels = self.load_data()
+        # data shape is [145,145,200]
+        # label shape is [145,145]
+        # 2 norm化
+        if self.use_norm:
+            norm_data = np.zeros(self.data.shape)
+            for i in range(self.data.shape[2]):
+                input_max = np.max(self.data[:,:,i])
+                input_min = np.min(self.data[:,:,i])
+                norm_data[:,:,i] = (self.data[:,:,i]-input_min)/(input_max-input_min)
+        else:
+            norm_data = self.data 
+        if self.data_param['pca'] > 0:
+            pca_data = self.applyPCA(norm_data, int(self.data_param['pca']))
+            norm_data = pca_data
+        if self.spectracl_size > 0: # 按照给定的spectral size截取数据
+            norm_data = norm_data[:,:,:self.spectracl_size]
+
+        # 3. reshape & filter
+        h, w, c = norm_data.shape
+        norm_data = norm_data.reshape((h*w,c))
+        norm_label = self.labels.reshape((h*w))
+        norm_data = norm_data[norm_label>0]
+        norm_label = norm_label[norm_label>0]
+
+        # 4. random select
+        X_train, X_test, Y_train, Y_test = train_test_split(norm_data,
+                                                        norm_label,
+                                                        test_size=self.test_ratio,
+                                                        random_state=345,
+                                                        stratify=norm_label)
+        print('------[data] split data to train, test------')
+        print("X_train shape : %s" % str(X_train.shape))
+        print("Y_train shape : %s" % str(Y_train.shape))
+        print("X_test shape : %s" % str(X_test.shape))
+        print("Y_test shape : %s" % str(Y_test.shape))
+
+        return X_train, Y_train, X_test, Y_test
+
+
+
     def generate_torch_dataset(self):
+        # 0. 判断是否使用numpy数据集
+        if self.if_numpy:
+            return self.generate_numpy_dataset()
+
         #1. 根据data_sign load data
         self.data, self.labels = self.load_data()
 

@@ -1,0 +1,19 @@
+{
+    "data":{
+        "if_numpy": true,
+        "data_sign":"Pavia",
+        "test_ratio":0.95,
+        "num_classes":15,
+        "pca":0,
+        "spectral_size":103
+    },
+    "net": {
+        "trainer" : "knn",
+        "n" : 5
+    },
+    "train": {
+    }
+}
+
+
+
