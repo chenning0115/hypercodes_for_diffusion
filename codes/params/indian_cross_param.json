@@ -8,8 +8,8 @@
         "test_ratio":0.90,
         "batch_size":64,
         "num_classes":16,
-        "pca":200,
-        "spectral_size": 200
+        "pca":70,
+        "spectral_size": 70
     },
     "net": {
         "trainer" : "cross_trainer",

@@ -1,5 +1,6 @@
 import os, sys
 import json, time
+import numpy as np
 
 
 class AvgrageMeter(object):
@@ -25,6 +26,7 @@ class AvgrageMeter(object):
 class HSIRecoder(object):
     def __init__(self) -> None:
         self.record_data = {}
+        self.pred = None
 
     def append_index_value(self, name, index, value):
         """
@@ -47,15 +49,23 @@ class HSIRecoder(object):
 
     def record_eval(self, eval_obj):
         self.record_data['eval'] = eval_obj
+
+    def record_pred(self, pred_matrix):
+        self.pred = pred_matrix
         
     def to_file(self, path):
         time_stamp = int(time.time())
-        save_path = "%s_%s.json" % (path, str(time_stamp))
+        save_path_json = "%s_%s.json" % (path, str(time_stamp))
+        save_path_pred = "%s_%s.pred.npy" % (path, str(time_stamp))
+
         ss = json.dumps(self.record_data, indent=4)
-        with open(save_path, 'w') as fout:
+        with open(save_path_json, 'w') as fout:
             fout.write(ss)
             fout.flush()
+        np.save(save_path_pred, self.pred)
 
+        print("save record of %s done!" % path)
+        
     def reset(self):
         self.record_data = {}
         

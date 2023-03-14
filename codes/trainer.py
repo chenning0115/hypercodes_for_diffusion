@@ -43,6 +43,9 @@ class SKlearnTrainer(object):
         print(temp_res['oa'], temp_res['aa'], temp_res['kappa'])
         return temp_res
 
+    def test(self, testX):
+        return self.model.predict(testX)
+
             
 class SVMTrainer(SKlearnTrainer):
     def __init__(self, params) -> None:
@@ -126,7 +129,6 @@ class BaseTrainer(object):
         y_pred_test, y_test = self.test(test_loader)
         temp_res = self.evalator.eval(y_test, y_pred_test)
         return temp_res
-
 
     def test(self, test_loader):
         """

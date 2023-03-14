@@ -1,72 +1,71 @@
 import os, sys, time, json
+import numpy as np
 import time
 import utils
 from utils import recorder
 
-from data import HSIDataLoader 
-from new_data import create_data_loader
+from data_provider import HSIDataLoader 
 from trainer import get_trainer, BaseTrainer, CrossTransformerTrainer
 import evaluation
 
+DEFAULT_RES_SAVE_PATH_PREFIX = "./res/"
 
 def train_by_param(param):
     #0. recorder reset防止污染数据
     recorder.reset()
     # 1. 数据生成
     dataloader = HSIDataLoader(param)
-    train_loader, test_loader = dataloader.generate_torch_dataset() 
-    # train_loader, test_loader, all_data_loader, _ = create_data_loader() 
+    train_loader, test_loader, all_loader = dataloader.generate_torch_dataset() 
 
     # 2. 训练和测试
     trainer = get_trainer(param)
     trainer.train(train_loader, test_loader)
     eval_res = trainer.final_eval(test_loader)
+    pred_all, y_all = trainer.test(all_loader)
+    pred_matrix = dataloader.reconstruct_pred(pred_all)
 
     #3. record all information
     recorder.record_param(param)
     recorder.record_eval(eval_res)
-    
-    return eval_res
+    recorder.record_pred(pred_matrix)
+
+    return recorder
 
 def train_convention_by_param(param):
     #0. recorder reset防止污染数据
     recorder.reset()
     # 1. 数据生成
     dataloader = HSIDataLoader(param)
-    trainX, trainY, testX, testY = dataloader.generate_torch_dataset() 
-    # train_loader, test_loader, all_data_loader, _ = create_data_loader() 
+    trainX, trainY, testX, testY, allX = dataloader.generate_torch_dataset() 
 
     # 2. 训练和测试
     trainer = get_trainer(param)
     trainer.train(trainX, trainY)
     eval_res = trainer.final_eval(testX, testY)
-
+    pred_all = trainer.test(allX)
+    pred_matrix = dataloader.reconstruct_pred(pred_all)
 
     #3. record all information
     recorder.record_param(param)
     recorder.record_eval(eval_res)
-    
-    return eval_res 
+    recorder.record_pred(pred_matrix)
+
+    return recorder 
 
 
 
-# include_path = {
-#     'conv2d.json',
-#     'vit_30.json',
-# }
 
 include_path = {
-    "knn.json",
+    # "knn.json",
     # 'random_forest.json',
     # 'svm.json',
     # 'conv3d.json',
     # 'conv2d.json',
     # 'conv1d.json',
-    # 'vit_pca200.json',
+    # 'indian_cross_param.json'
     # 'indian_cross_param_autoencoder.json'
 
-
-    "pavia_knn.json",
+    # "pavia_knn.json",
     # 'pavia_random_forest.json',
     # 'pavia_svm.json',
     # 'pavia_conv1d.json',
@@ -75,13 +74,14 @@ include_path = {
     # 'pavia_cross_param_autoencoder.json'
     # 'pavia_cross_param.json'
 
-    "houston_knn.json",
+    # "houston_knn.json",
     # 'houston_random_forest.json',
     # 'houston_svm.json',
     # 'houston_conv1d.json',
     # 'houston_conv2d.json',
     # 'houston_conv3d.json',
-    # 'houston_cross_param_autoencoder.json'
+    'houston_cross_param_autoencoder.json'
+    # 'houston_cross_param.json'
 }
 
 def run_all(convention=False):
@@ -97,7 +97,7 @@ def run_all(convention=False):
         if convention:
             train_convention_by_param(param)
         else:
-            eval_res = train_by_param(param)
+            train_by_param(param)
         print('model eval done of %s...' % name)
         path = '%s/%s' % (save_path_prefix, name) 
         recorder.to_file(path)
@@ -172,7 +172,7 @@ def run_diffusion():
 
 if __name__ == "__main__":
     # run_diffusion()
-    run_all(convention=True)
+    run_all(convention=False)
     # run_svm()
     # run_knn()
     

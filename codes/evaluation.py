@@ -24,7 +24,7 @@ class HSIEvaluation(object):
         data_sign = param['data']['data_sign'] 
         if data_sign == 'Indian':
             self.target_names = INDIAN_TARGET_NAMES
-        elif data_sign == "PaviaU":
+        elif data_sign == "Pavia":
             self.target_names = PAVIA_UNIVERSITY_NAMES
 
         self.res = {}
