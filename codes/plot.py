@@ -11,6 +11,17 @@ import matplotlib.pyplot as plt
 import time
 import pandas as pd
 
+colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [0, 255, 255], 
+[255, 0, 255],  [176, 48, 96], [46, 139, 87], [160, 32, 240], [255, 127, 80],
+ [127, 255, 212],  [218, 112, 214], [160, 82, 45], [127, 255, 0], [216, 191, 216],[171, 175, 80],[101, 193, 60]]
+
+def data_to_colormap2(data):
+    assert len(data.shape)==2
+    x_list = data.reshape((-1,))
+    y = np.zeros((x_list.shape[0], 3))
+    for index, item in enumerate(x_list):
+        y[index] = np.array(colors[item]) / 255
+    return y
 
 
 def data_to_colormap(data):

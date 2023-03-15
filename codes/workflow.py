@@ -55,41 +55,48 @@ def train_convention_by_param(param):
 
 
 
-include_path = {
-    # "knn.json",
-    # 'random_forest.json',
-    # 'svm.json',
-    # 'conv3d.json',
-    # 'conv2d.json',
-    # 'conv1d.json',
-    # 'indian_cross_param.json'
-    # 'indian_cross_param_autoencoder.json'
+include_path = [
+    "knn.json",
+    'random_forest.json',
+    'svm.json',
+    'conv3d.json',
+    'conv2d.json',
+    'conv1d.json',
+    'indian_cross_param.json',
+    # 'indian_cross_param_autoencoder.json',
+    # 'indian_test.json',
 
-    # "pavia_knn.json",
-    # 'pavia_random_forest.json',
-    # 'pavia_svm.json',
-    # 'pavia_conv1d.json',
-    # 'pavia_conv2d.json',
-    # 'pavia_conv3d.json',
-    # 'pavia_cross_param_autoencoder.json'
-    # 'pavia_cross_param.json'
+    "pavia_knn.json",
+    'pavia_random_forest.json',
+    'pavia_svm.json',
+    'pavia_conv1d.json',
+    'pavia_conv2d.json',
+    'pavia_conv3d.json',
+    'pavia_cross_param.json',
+    # 'pavia_cross_param_autoencoder.json',
 
-    # "houston_knn.json",
-    # 'houston_random_forest.json',
-    # 'houston_svm.json',
-    # 'houston_conv1d.json',
-    # 'houston_conv2d.json',
-    # 'houston_conv3d.json',
-    'houston_cross_param_autoencoder.json'
-    # 'houston_cross_param.json'
-}
+    "houston_knn.json",
+    'houston_random_forest.json',
+    'houston_svm.json',
+    'houston_conv1d.json',
+    'houston_conv2d.json',
+    'houston_conv3d.json',
+    # 'houston_cross_param_autoencoder.json'
+    'houston_cross_param.json'
+]
 
-def run_all(convention=False):
+def check_convention(name):
+    for a in ['knn', 'random_forest', 'svm']:
+        if a in name:
+            return True
+    return False
+
+def run_all():
     save_path_prefix = './res/'
     if not os.path.exists(save_path_prefix):
         os.makedirs(save_path_prefix)
-
     for name in include_path:
+        convention = check_convention(name)
         path_param = './params/%s' % name
         with open(path_param, 'r') as fin:
             param = json.loads(fin.read())
@@ -172,7 +179,7 @@ def run_diffusion():
 
 if __name__ == "__main__":
     # run_diffusion()
-    run_all(convention=False)
+    run_all()
     # run_svm()
     # run_knn()
     

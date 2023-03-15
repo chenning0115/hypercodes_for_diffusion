@@ -1,0 +1,29 @@
+{
+    "data":{
+        "data_sign":"Indian",
+        "diffusion_sign":false,
+        "diffusion_data_sign_path_prefix": "../../data/unet3d_patch16_without_downsample_kernal5_fix/save_feature",
+        "diffusion_data_sign": "t100_2_full.pkl.npy",
+        "patch_size":9,
+        "test_ratio":0.90,
+        "batch_size":64,
+        "num_classes":16,
+        "pca":200,
+        "spectral_size": 200
+    },
+    "net": {
+        "trainer" : "cross_trainer",
+        "net_type": "just_pixel",
+	    "mlp_head_dim": 64,
+        "depth":5,
+        "dim":64,
+        "conv3d_kernal_size":[3,3,3],
+        "conv3d_padding":[2,1,1]
+    },
+    "train": {
+        "epochs": 50,
+        "lr":0.001,
+        "weight_decay":0
+    }
+}
+

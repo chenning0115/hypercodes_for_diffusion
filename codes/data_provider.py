@@ -26,7 +26,7 @@ class DataSetIter(torch.utils.data.Dataset):
         start_x, start_y = self.index2pos[index]
         patch = self.base_img[start_x:start_x+2*self.margin+1 , start_y:start_y+2*self.margin+1,:]
         if self.append_dim:
-            patch = np.expand_dims(0) # [channel=1, h, w, spe]
+            patch = np.expand_dims(patch, 0) # [channel=1, h, w, spe]
             patch = patch.transpose((0,3,1,2)) # [c, spe, h, w]
         else:
             patch = patch.transpose((2, 0, 1)) #[spe, h, w]
